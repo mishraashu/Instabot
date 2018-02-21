@@ -7,15 +7,15 @@ from textblob.sentiments import NaiveBayesAnalyzer
 
 
 response = requests.get('https://api.jsonbin.io/b/59d0f30408be13271f7df29c').json()
-APP_ACCESS_TOKEN = response['access_token']
+APP_ACCESS_TOKEN = response['access_token']      #access token of a instagram
 BASE_URL ="https://api.instagram.com/v1/"
 
 #=======================================================================================================================
 
-def owner_info():
+def owner_info():              #This function is used to get the information of the user
 
     response = requests.get("%susers/self/?access_token=%s"%(BASE_URL,APP_ACCESS_TOKEN)).json()
-    if response['meta']['code']==200:
+    if response['meta']['code']==200:                    #It is used to check the data is coming or not
         print 'username : %s' %(response['data']['username'])
         print 'No of followers : %s' % (response['data']['counts']['followed_by'])
         print 'No of people you are following : %s' % (response['data']['counts']['follows'])
@@ -26,7 +26,7 @@ def owner_info():
 #=======================================================================================================================
 
 
-def owner_recent_post():
+def owner_recent_post():            #
     response = requests.get("%susers/self/media/recent/?access_token=%s" % (BASE_URL, APP_ACCESS_TOKEN)).json()
     if response['meta']['code'] == 200:
         if len(response['data'])> 0:
@@ -125,18 +125,27 @@ def Comment_on_post(username):
 def Delete_comment(username):
     media_id = get_media_id(username)
     response = requests.get("%smedia/%s/comments?access_token=%s" % (BASE_URL,media_id,APP_ACCESS_TOKEN)).json()
-    ch = True
-    for index in range(0,len(response['data'])):
-        comt_id = response['data'][index]['id']
-        comt_txt = response['data'][index]['text']
-        blob = TextBlob(comt_txt, analyzer=NaiveBayesAnalyzer())
-        if blob.sentiment.p_neg > blob.sentiment.p_pos:
-            response= requests.delete("%smedia/%s/comments/%s?access_token=%s" %(BASE_URL,media_id,comt_id,APP_ACCESS_TOKEN)).json()
-            print "comment deleted"
+    if response['meta']['code']==200:
+        if len(response['data']):
+            for index in range(0,len(response['data'])):
+                comt_id = response['data'][index]['id']
+                comt_txt = response['data'][index]['text']
+                blob = TextBlob(comt_txt, analyzer=NaiveBayesAnalyzer())
+                if blob.sentiment.p_neg > blob.sentiment.p_pos:
+                    response= requests.delete("%smedia/%s/comments/%s?access_token=%s" %(BASE_URL,media_id,comt_id,APP_ACCESS_TOKEN)).json()
+                    if response['meta']['code']==200:
+                        print "comment deleted"
+                    else:
+                        print "unable to delete"
+                else:
+                    print "comment positive"
         else:
-            print "comment positive"
-            ch = False
-            
+            print "thier are no comments on the post"
+    else:
+        print "The code recive other than 200"
+
+
+
 
 
 
